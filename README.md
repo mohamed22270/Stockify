@@ -1,8 +1,12 @@
 # StockFlow
 
+[![Flutter CI](https://github.com/MuhammedMubashir-dev/stockflow-flutter/actions/workflows/flutter-ci.yml/badge.svg)](https://github.com/MuhammedMubashir-dev/stockflow-flutter/actions/workflows/flutter-ci.yml)
+
 StockFlow is an original, offline-first inventory and order-management application built with Flutter. It is designed as a public portfolio project that demonstrates production-minded mobile development without using proprietary company code or data.
 
 **Live demo:** Coming soon
+
+**Android demo:** Download the latest APK from [GitHub Releases](https://github.com/MuhammedMubashir-dev/stockflow-flutter/releases/latest).
 
 ## Preview
 
