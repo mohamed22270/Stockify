@@ -6,6 +6,10 @@ import '../domain/models.dart';
 
 typedef Translator = String Function(String english, String arabic);
 
+const Color brandDark = Color(0xFF102A43);
+const Color brandPrimary = Color(0xFF0D9488);
+const Color brandAccent = Color(0xFF38BDF8);
+
 class StockFlowShell extends ConsumerStatefulWidget {
   const StockFlowShell({
     super.key,
@@ -34,6 +38,7 @@ class _StockFlowShellState extends ConsumerState<StockFlowShell> {
   Widget build(BuildContext context) {
     final inventory = ref.watch(inventoryControllerProvider);
     final wide = MediaQuery.sizeOf(context).width >= 850;
+
     final destinations = [
       NavigationDestination(
         icon: const Icon(Icons.space_dashboard_outlined),
@@ -50,29 +55,34 @@ class _StockFlowShellState extends ConsumerState<StockFlowShell> {
         selectedIcon: const Icon(Icons.receipt_long_rounded),
         label: tr('Orders', 'الطلبات'),
       ),
+      NavigationDestination(
+        icon: const Icon(Icons.info_outline_rounded),
+        selectedIcon: const Icon(Icons.info_rounded),
+        label: tr('About', 'عن التطبيق'),
+      ),
     ];
 
     return Scaffold(
       appBar: AppBar(
+        elevation: 0,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 34,
-              height: 34,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius: BorderRadius.circular(10),
+                gradient: const LinearGradient(
+                  colors: [brandPrimary, brandAccent],
+                ),
+                borderRadius: BorderRadius.circular(13),
               ),
-              child: const Icon(
-                Icons.stacked_bar_chart_rounded,
-                color: Colors.white,
-              ),
+              child: const Icon(Icons.inventory_2_rounded, color: Colors.white),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 12),
             const Text(
-              'StockFlow',
-              style: TextStyle(fontWeight: FontWeight.w800),
+              'Stockify',
+              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: .5),
             ),
           ],
         ),
@@ -100,8 +110,9 @@ class _StockFlowShellState extends ConsumerState<StockFlowShell> {
                     selectedIndex: _selectedIndex,
                     destinations: destinations,
                     tr: tr,
-                    onSelected: (value) =>
-                        setState(() => _selectedIndex = value),
+                    onSelected: (value) {
+                      setState(() => _selectedIndex = value);
+                    },
                   ),
                 Expanded(
                   child: IndexedStack(
@@ -110,19 +121,22 @@ class _StockFlowShellState extends ConsumerState<StockFlowShell> {
                       DashboardPage(
                         state: inventory,
                         tr: tr,
-                        onViewInventory: () =>
-                            setState(() => _selectedIndex = 1),
+                        onViewInventory: () {
+                          setState(() => _selectedIndex = 1);
+                        },
                       ),
                       InventoryPage(
                         state: inventory,
                         tr: tr,
                         query: _query,
-                        onQueryChanged: (value) =>
-                            setState(() => _query = value),
+                        onQueryChanged: (value) {
+                          setState(() => _query = value);
+                        },
                         onReceive: _showReceiveDialog,
                         onSell: _showOrderDialog,
                       ),
                       OrdersPage(state: inventory, tr: tr),
+                      AboutPage(tr: tr),
                     ],
                   ),
                 ),
@@ -133,8 +147,9 @@ class _StockFlowShellState extends ConsumerState<StockFlowShell> {
           ? null
           : NavigationBar(
               selectedIndex: _selectedIndex,
-              onDestinationSelected: (value) =>
-                  setState(() => _selectedIndex = value),
+              onDestinationSelected: (value) {
+                setState(() => _selectedIndex = value);
+              },
               destinations: destinations,
             ),
     );
@@ -146,7 +161,8 @@ class _StockFlowShellState extends ConsumerState<StockFlowShell> {
       action: tr('Add stock', 'إضافة'),
       maximum: 999,
     );
-    if (quantity != null) {
+
+    if (quantity != null && quantity > 0) {
       await ref
           .read(inventoryControllerProvider.notifier)
           .receiveStock(product.id, quantity);
@@ -159,11 +175,15 @@ class _StockFlowShellState extends ConsumerState<StockFlowShell> {
       action: tr('Confirm order', 'تأكيد الطلب'),
       maximum: product.stock,
     );
-    if (quantity == null) return;
+
+    if (quantity == null || quantity <= 0) return;
+
     final success = await ref
         .read(inventoryControllerProvider.notifier)
         .createOrder(product.id, quantity);
+
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -181,6 +201,7 @@ class _StockFlowShellState extends ConsumerState<StockFlowShell> {
     required int maximum,
   }) {
     final controller = TextEditingController(text: '1');
+
     return showDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
@@ -200,8 +221,9 @@ class _StockFlowShellState extends ConsumerState<StockFlowShell> {
             child: Text(tr('Cancel', 'إلغاء')),
           ),
           FilledButton(
-            onPressed: () =>
-                Navigator.pop(context, int.tryParse(controller.text)),
+            onPressed: () {
+              Navigator.pop(context, int.tryParse(controller.text));
+            },
             child: Text(action),
           ),
         ],
@@ -226,13 +248,16 @@ class AppSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Container(
-      width: 248,
+      width: 260,
       margin: const EdgeInsets.fromLTRB(16, 8, 0, 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0B1F33),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF102A43), Color(0xFF0B1F33)],
+        ),
         borderRadius: BorderRadius.circular(26),
         boxShadow: const [
           BoxShadow(
@@ -248,22 +273,22 @@ class AppSidebar extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .07),
+              color: Colors.white.withValues(alpha: .08),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Row(
               children: [
                 Container(
-                  width: 42,
-                  height: 42,
+                  width: 45,
+                  height: 45,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Color(0xFF14B8A6), Color(0xFF38BDF8)],
+                      colors: [brandPrimary, brandAccent],
                     ),
-                    borderRadius: BorderRadius.circular(13),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
-                    Icons.storefront_rounded,
+                    Icons.inventory_2_rounded,
                     color: Colors.white,
                   ),
                 ),
@@ -272,16 +297,20 @@ class AppSidebar extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        tr('Demo Store', 'المتجر التجريبي'),
-                        style: const TextStyle(
+                      const Text(
+                        'Stockify',
+                        style: TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
                       Text(
-                        tr('Kerala branch', 'فرع كيرالا'),
-                        style: const TextStyle(color: Color(0xFF94A3B8)),
+                        tr('Inventory Management', 'إدارة المخزون'),
+                        style: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 10,
+                        ),
                       ),
                     ],
                   ),
@@ -289,15 +318,26 @@ class AppSidebar extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 26),
+          const SizedBox(height: 30),
+          Text(
+            tr('MAIN MENU', 'القائمة الرئيسية'),
+            style: const TextStyle(
+              color: Color(0xFF64748B),
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.3,
+            ),
+          ),
+          const SizedBox(height: 14),
           ...List.generate(destinations.length, (index) {
             final selected = index == selectedIndex;
             final destination = destinations[index];
+
             return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 9),
               child: Material(
                 color: selected
-                    ? const Color(0xFF14B8A6).withValues(alpha: .18)
+                    ? brandPrimary.withValues(alpha: .22)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(14),
                 child: InkWell(
@@ -306,23 +346,19 @@ class AppSidebar extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
-                      vertical: 13,
+                      vertical: 14,
                     ),
                     child: Row(
                       children: [
-                        IconTheme(
-                          data: IconThemeData(
-                            color: selected
-                                ? const Color(0xFF5EEAD4)
-                                : const Color(0xFF94A3B8),
-                          ),
-                          child:
-                              (selected
-                                  ? destination.selectedIcon
-                                  : destination.icon) ??
-                              const SizedBox.shrink(),
+                        Icon(
+                          selected
+                              ? (destination.selectedIcon as Icon).icon
+                              : (destination.icon as Icon).icon,
+                          color: selected
+                              ? const Color(0xFF5EEAD4)
+                              : const Color(0xFF94A3B8),
                         ),
-                        const SizedBox(width: 13),
+                        const SizedBox(width: 14),
                         Text(
                           destination.label,
                           style: TextStyle(
@@ -330,10 +366,13 @@ class AppSidebar extends StatelessWidget {
                                 ? Colors.white
                                 : const Color(0xFFCBD5E1),
                             fontWeight: selected
-                                ? FontWeight.w700
+                                ? FontWeight.w800
                                 : FontWeight.w500,
                           ),
                         ),
+                        const Spacer(),
+                        if (selected)
+                          const Icon(Icons.circle, size: 7, color: brandAccent),
                       ],
                     ),
                   ),
@@ -343,37 +382,62 @@ class AppSidebar extends StatelessWidget {
           }),
           const Spacer(),
           const Divider(color: Color(0xFF294158)),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: colors.primary,
-                foregroundColor: colors.onPrimary,
-                child: const Text(
-                  'MK',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .06),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                const CircleAvatar(
+                  radius: 21,
+                  backgroundColor: brandPrimary,
+                  foregroundColor: Colors.white,
+                  child: Text(
+                    'MA',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Mubashir K',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
+                const SizedBox(width: 11),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mohamed Abo alfetoah',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                        ),
                       ),
-                    ),
-                    Text(
-                      tr('Store manager', 'مدير المتجر'),
-                      style: const TextStyle(color: Color(0xFF94A3B8)),
-                    ),
-                  ],
+                      SizedBox(height: 3),
+                      Text(
+                        'Modified by Developer',
+                        style: TextStyle(
+                          color: Color(0xFF5EEAD4),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Text(
+              'Stockify • Portfolio Edition',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: .4),
+                fontSize: 9,
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -402,16 +466,16 @@ class PageFrame extends StatelessWidget {
           title,
           style: Theme.of(
             context,
-          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 7),
         Text(
           subtitle,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 26),
         child,
       ],
     ),
@@ -468,6 +532,7 @@ class DashboardPage extends StatelessWidget {
         ),
       ),
     ];
+
     final width = MediaQuery.sizeOf(context).width;
     final columns = width > 1150
         ? 4
@@ -476,13 +541,60 @@ class DashboardPage extends StatelessWidget {
         : 1;
 
     return PageFrame(
-      title: tr('Good morning, Mubashir', 'صباح الخير، مبشر'),
+      title: tr('Welcome to Stockify', 'أهلاً بك في Stockify'),
       subtitle: tr(
-        'Here is today\'s inventory overview. Changes are saved offline.',
-        'هذه نظرة عامة على المخزون اليوم. يتم حفظ التغييرات دون اتصال.',
+        'Your inventory overview. Changes are saved offline.',
+        'نظرة عامة على مخزونك. يتم حفظ التغييرات دون اتصال.',
       ),
       child: Column(
         children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0F766E), Color(0xFF0EA5A4)],
+              ),
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.insights_rounded,
+                  color: Colors.white,
+                  size: 38,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tr('Smart Inventory Control', 'إدارة ذكية للمخزون'),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        tr(
+                          'Manage products, stock and orders in one place.',
+                          'أدر المنتجات والمخزون والطلبات من مكان واحد.',
+                        ),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -495,6 +607,7 @@ class DashboardPage extends StatelessWidget {
             ),
             itemBuilder: (context, index) {
               final metric = metrics[index];
+
               return MetricCard(
                 label: metric.$1,
                 value: metric.$2,
@@ -509,6 +622,18 @@ class DashboardPage extends StatelessWidget {
             state: state,
             tr: tr,
             onViewInventory: onViewInventory,
+          ),
+          const SizedBox(height: 18),
+          Card(
+            child: ListTile(
+              leading: const CircleAvatar(child: Icon(Icons.code_rounded)),
+              title: Text(
+                tr('Application developer', 'مطور التطبيق'),
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: const Text('Mohamed Abo alfetoah'),
+              trailing: const Icon(Icons.verified_outlined),
+            ),
           ),
         ],
       ),
@@ -565,9 +690,9 @@ class MetricCard extends StatelessWidget {
             value,
             style: Theme.of(
               context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
           Text(
             caption,
             style: TextStyle(
@@ -596,15 +721,18 @@ class InventoryHealthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final healthy = state.products.length - state.lowStockCount;
+
     final ratio = state.products.isEmpty
         ? 0.0
         : healthy / state.products.length;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(22),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final compact = constraints.maxWidth < 640;
+
             final summary = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -625,7 +753,7 @@ class InventoryHealthCard extends StatelessWidget {
                     Text(
                       tr('Inventory health', 'صحة المخزون'),
                       style: const TextStyle(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w900,
                         fontSize: 17,
                       ),
                     ),
@@ -647,7 +775,7 @@ class InventoryHealthCard extends StatelessWidget {
                     backgroundColor: Theme.of(
                       context,
                     ).colorScheme.surfaceContainerHighest,
-                    valueColor: const AlwaysStoppedAnimation(Color(0xFF14B8A6)),
+                    valueColor: const AlwaysStoppedAnimation(brandPrimary),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -660,12 +788,13 @@ class InventoryHealthCard extends StatelessWidget {
                 ),
               ],
             );
+
             final attention = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   tr('Requires attention', 'يتطلب الانتباه'),
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 12),
                 ...state.products
@@ -706,6 +835,7 @@ class InventoryHealthCard extends StatelessWidget {
                     ),
               ],
             );
+
             return compact
                 ? Column(
                     children: [summary, const SizedBox(height: 24), attention],
@@ -746,6 +876,7 @@ class InventoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final products = state.products.where((product) {
       final filter = query.toLowerCase();
+
       return product.name.toLowerCase().contains(filter) ||
           product.sku.toLowerCase().contains(filter);
     }).toList();
@@ -773,6 +904,7 @@ class InventoryPage extends StatelessWidget {
             (product) => LayoutBuilder(
               builder: (context, constraints) {
                 final compact = constraints.maxWidth < 560;
+
                 final details = Row(
                   children: [
                     CircleAvatar(
@@ -792,7 +924,7 @@ class InventoryPage extends StatelessWidget {
                         children: [
                           Text(
                             product.name,
-                            style: const TextStyle(fontWeight: FontWeight.w700),
+                            style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 3),
                           Text(
@@ -835,6 +967,7 @@ class InventoryPage extends StatelessWidget {
                     ),
                   ],
                 );
+
                 final actions = Row(
                   mainAxisSize: compact ? MainAxisSize.max : MainAxisSize.min,
                   children: [
@@ -925,7 +1058,7 @@ class OrdersPage extends StatelessWidget {
                   Text(
                     tr('No orders yet', 'لا توجد طلبات بعد'),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -955,7 +1088,7 @@ class OrdersPage extends StatelessWidget {
                         ),
                         title: Text(
                           order.productName,
-                          style: const TextStyle(fontWeight: FontWeight.w700),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                         subtitle: Text(
                           '${order.id}  •  ${tr('Qty', 'الكمية')}: ${order.quantity}',
@@ -963,7 +1096,7 @@ class OrdersPage extends StatelessWidget {
                         trailing: Text(
                           '₹${order.total.toStringAsFixed(0)}',
                           style: const TextStyle(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w900,
                             fontSize: 16,
                           ),
                         ),
@@ -974,4 +1107,251 @@ class OrdersPage extends StatelessWidget {
                 .toList(),
           ),
   );
+}
+
+class AboutPage extends StatelessWidget {
+  const AboutPage({super.key, required this.tr});
+
+  final Translator tr;
+
+  @override
+  Widget build(BuildContext context) {
+    return PageFrame(
+      title: tr('About Stockify', 'عن Stockify'),
+      subtitle: tr(
+        'Learn more about the application and its developer.',
+        'تعرف على التطبيق والمطور.',
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [brandDark, brandPrimary, brandAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 85,
+                  height: 85,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: .15),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: const Icon(
+                    Icons.inventory_2_rounded,
+                    size: 48,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Stockify',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  tr('Smart Inventory Management', 'إدارة ذكية للمخزون'),
+                  style: const TextStyle(color: Colors.white70, fontSize: 15),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr('About the application', 'عن التطبيق'),
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    tr(
+                      'Stockify is an inventory and order management application designed to help users organize products, monitor stock levels, receive inventory, and manage sales in one place.',
+                      'Stockify هو تطبيق لإدارة المخزون والطلبات، يساعد المستخدمين على تنظيم المنتجات ومتابعة مستويات المخزون واستلام البضائع وإدارة المبيعات من مكان واحد.',
+                    ),
+                    style: const TextStyle(height: 1.7),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr('Main features', 'المميزات الرئيسية'),
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _AboutFeature(
+                    icon: Icons.inventory_2_outlined,
+                    title: tr('Inventory management', 'إدارة المخزون'),
+                    subtitle: tr(
+                      'Manage products and stock quantities.',
+                      'إدارة المنتجات وكميات المخزون.',
+                    ),
+                  ),
+                  _AboutFeature(
+                    icon: Icons.receipt_long_outlined,
+                    title: tr('Order management', 'إدارة الطلبات'),
+                    subtitle: tr(
+                      'Create and track product orders.',
+                      'إنشاء ومتابعة طلبات المنتجات.',
+                    ),
+                  ),
+                  _AboutFeature(
+                    icon: Icons.wifi_off_rounded,
+                    title: tr('Offline support', 'العمل دون إنترنت'),
+                    subtitle: tr(
+                      'Save your changes locally on your device.',
+                      'حفظ التغييرات محلياً على جهازك.',
+                    ),
+                  ),
+                  _AboutFeature(
+                    icon: Icons.language_rounded,
+                    title: tr('Bilingual interface', 'واجهة بلغتين'),
+                    subtitle: tr(
+                      'Switch between Arabic and English.',
+                      'التبديل بين العربية والإنجليزية.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 32,
+                    backgroundColor: brandPrimary,
+                    child: Text(
+                      'MA',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Text(
+                    tr('Developer', 'المطور'),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  const Text(
+                    'Mohamed Abo alfetoah',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    tr(
+                      'Customized by Mohamed Abo alfetoah',
+                      'تم تخصيص هذه النسخة بواسطة Mohamed Abo alfetoah',
+                    ),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: brandPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Stockify • Portfolio Edition',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AboutFeature extends StatelessWidget {
+  const _AboutFeature({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              color: brandPrimary.withValues(alpha: .1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: brandPrimary),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
